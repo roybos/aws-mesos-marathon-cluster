@@ -1,0 +1,7 @@
+# 
+# Platform inventory for launching Mesos/Marathon cluster in AWS
+#
+[local]
+localhost
+
+[ec2_launched]
