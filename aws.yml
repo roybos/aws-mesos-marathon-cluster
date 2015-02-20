@@ -1,0 +1,23 @@
+---
+- name: Setup AWS cloud
+  hosts: local
+  connection: local
+  gather_facts: False
+  roles:
+    - role: aws
+
+- name: Setup cluster nodes
+  hosts: ec2:ec2_launched
+  remote_user: ubuntu
+  sudo: True
+  roles:
+    - role: aws-facts
+    - role: cluster-node
+
+- name: Reboot cluster nodes (if necessary)
+  hosts: ec2:ec2_launched
+  serial: 1
+  remote_user: ubuntu
+  sudo: True
+  roles:
+    - role: reboot
