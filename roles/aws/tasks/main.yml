@@ -1,0 +1,145 @@
+---
+# 
+# AWS tasks: Provision High Availability instance VPC setup in 3 availability zones
+#
+- name: Add EC2 provisioning key
+  local_action:
+    module: ec2_key
+    name: "{{ aws_keypair }}"
+    key_material: "{{ aws_keypair_publickey }}"
+    region: "{{ aws_region }}"
+    wait: yes
+    state: present
+
+- name: "Provision VPC in {{ aws_region }}"
+  local_action:
+    module: ec2_vpc
+    state: present
+    cidr_block: 10.1.0.0/16
+    resource_tags: { "Name": "{{ cluster_name }}" }
+    dns_hostnames: True
+    dns_support: True
+    internet_gateway: True
+    subnets:
+    - cidr: 10.1.1.0/24
+      az: "{{ aws_zone1 }}"
+      resource_tags: { "Name" : "{{ cluster_name }}-zone-a" }
+    - cidr: 10.1.2.0/24
+      az: "{{ aws_zone2 }}"
+      resource_tags: { "Name" : "{{ cluster_name }}-zone-b" }
+    - cidr: 10.1.3.0/24
+      az: "{{ aws_zone3 }}"
+      resource_tags: { "Name" : "{{ cluster_name }}-zone-c" }
+    route_tables:
+    - subnets:
+      - 10.1.1.0/24
+      - 10.1.2.0/24
+      - 10.1.3.0/24
+      routes:
+      - dest: 0.0.0.0/0
+        gw: igw
+    region: "{{ aws_region }}"
+    wait: yes
+  register: vpc
+
+- name: Provision EC2 security group
+  local_action:
+    module: ec2_group
+    state: present
+    name: "{{ cluster_name }}"
+    description: "{{ cluster_name }}"
+    vpc_id: "{{ vpc.vpc_id }}"
+    region: "{{ aws_region }}"
+    rules: "{{ aws_security_group_rules }}"
+    rules_egress:
+      - { proto: udp, from_port: 53, to_port: 53, cidr_ip: 0.0.0.0/0 }
+      - { proto: tcp, from_port: 80, to_port: 80, cidr_ip: 0.0.0.0/0 }
+      - { proto: tcp, from_port: 443, to_port: 443, cidr_ip: 0.0.0.0/0 }
+      - { proto: all, group_name: "{{ cluster_name }}" }
+
+- name: Provision EC2 instances in {{ aws_zone1 }}
+  local_action:
+    module: ec2
+    region: "{{ aws_region }}"
+    keypair: "{{ aws_keypair }}"
+    group: "{{ cluster_name }}"
+    instance_type: "{{ aws_instance_type }}"
+    instance_tags:
+      Name: "{{ cluster_name }}-node"
+      Zone: "{{ aws_zone1 }}"
+    count_tag:
+      Name: "{{ cluster_name }}-node"
+      Zone: "{{ aws_zone1 }}"
+    exact_count: "{{ cluster_zone_node_count }}"
+    image: "{{ aws_image }}"
+    vpc_subnet_id: "{{ vpc.subnets[0].id }}"
+    assign_public_ip: False
+    ebs_optimized: True
+    volumes: "{{ cluster_node_volumes }}"
+    wait: yes
+  register: ec2_instances_zone1
+
+- name: Provision EC2 instances in {{ aws_zone2 }}
+  local_action:
+    module: ec2
+    region: "{{ aws_region }}"
+    keypair: "{{ aws_keypair }}"
+    group: "{{ cluster_name }}"
+    instance_type: "{{ aws_instance_type }}"
+    instance_tags:
+      Name: "{{ cluster_name }}-node"
+      Zone: "{{ aws_zone2 }}"
+    count_tag:
+      Name: "{{ cluster_name }}-node"
+      Zone: "{{ aws_zone2 }}"
+    exact_count: "{{ cluster_zone_node_count }}"
+    image: "{{ aws_image }}"
+    vpc_subnet_id: "{{ vpc.subnets[1].id }}"
+    assign_public_ip: False
+    ebs_optimized: True
+    volumes: "{{ cluster_node_volumes }}"
+    wait: yes
+  register: ec2_instances_zone2
+
+- name: Provision EC2 instances in {{ aws_zone3 }}
+  local_action:
+    module: ec2
+    region: "{{ aws_region }}"
+    keypair: "{{ aws_keypair }}"
+    group: "{{ cluster_name }}"
+    instance_type: "{{ aws_instance_type }}"
+    instance_tags:
+      Name: "{{ cluster_name }}-node"
+      Zone: "{{ aws_zone3 }}"
+    count_tag:
+      Name: "{{ cluster_name }}-node"
+      Zone: "{{ aws_zone3 }}"
+    exact_count: "{{ cluster_zone_node_count }}"
+    image: "{{ aws_image }}"
+    vpc_subnet_id: "{{ vpc.subnets[2].id }}"
+    assign_public_ip: False
+    ebs_optimized: True
+    volumes: "{{ cluster_node_volumes }}"
+    wait: yes
+  register: ec2_instances_zone3
+
+- name: Associate elastic IP to instances
+  ec2_eip:
+    instance_id: "{{ item.id }}"
+    in_vpc: True
+    region: "{{ aws_region }}"
+    reuse_existing_ip_allowed: True
+    wait_timeout: 10
+  when: item.public_ip == None
+  with_items: "[{{ec2_instances_zone1.tagged_instances}}, {{ec2_instances_zone2.tagged_instances}}, {{ec2_instances_zone3.tagged_instances}}]"
+  register: ec2_instances_eips
+
+- name: Add instances to host group
+  local_action: add_host hostname={{ item.public_ip }} groupname=ec2_launched
+  when: item.public_ip is defined
+  with_items: ec2_instances_eips.results
+
+- name: Wait for SSH instances
+  wait_for: host={{ item.public_ip }} port=22 timeout=120 state=started
+  when: item.public_ip is defined
+  with_items: ec2_instances_eips.results
