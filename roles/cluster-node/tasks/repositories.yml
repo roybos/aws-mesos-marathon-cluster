@@ -1,0 +1,26 @@
+---
+# 
+# Cluster node repositories
+#
+- name: Add vbernat HAProxy ppa
+  apt_repository: repo='ppa:vbernat/haproxy-1.5'
+
+- name: Add webupd8team Java ppa
+  apt_repository: repo='ppa:webupd8team/java'
+
+- name: Automatically accept Oracle JDK license
+  shell: "echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | tee /etc/oracle-java-8-licence-acceptance | sudo debconf-set-selections"
+  args:
+    creates: /etc/oracle-java-8-licence-acceptance
+
+- name: Add Docker apt-key
+  apt_key: id=A88D21E9 keyserver=hkp://keyserver.ubuntu.com:80 state=present
+
+- name: Add Docker repository
+  apt_repository: repo='deb https://get.docker.com/ubuntu docker main' state=present
+
+- name: Add Mesosphere apt-key
+  apt_key: id=E56151BF keyserver=hkp://keyserver.ubuntu.com:80 state=present
+
+- name: Add Mesosphere repository
+  apt_repository: repo='deb http://repos.mesosphere.io/ubuntu trusty main' state=present

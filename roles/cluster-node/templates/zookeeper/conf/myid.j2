@@ -1,0 +1,1 @@
+{% for host in play_hosts|sort %}{% if host == inventory_hostname %}{{loop.index}}{% endif %}{% endfor %}

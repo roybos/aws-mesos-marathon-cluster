@@ -1,0 +1,42 @@
+---
+#
+# Linux system tweaks
+#
+- name: Set sysctl fs.file-max
+  sysctl: name=fs.file-max value=262144 state=present
+
+- name: Set sysctl vm.swappiness
+  sysctl: name=vm.swappiness value=10 state=present
+
+- name: Set sysctl net.core.somaxconn
+  sysctl: name=net.core.somaxconn value=64000 state=present
+
+- name: Set sysctl net.core.netdev_max_backlog
+  sysctl: name=net.core.netdev_max_backlog value=65536 state=present
+
+- name: Set sysctl net.ipv4.tcp_max_syn_backlog
+  sysctl: name=net.ipv4.tcp_max_syn_backlog value=65536 state=present
+
+- name: Set sysctl net.core.rmem_default
+  sysctl: name=net.core.rmem_default value=16777216 state=present
+
+- name: Set sysctl net.core.wmem_default
+  sysctl: name=net.core.wmem_default value=16777216 state=present
+
+- name: Set sysctl net.core.rmem_max
+  sysctl: name=net.core.rmem_max value=16777216 state=present
+
+- name: Set sysctl net.core.wmem_max
+  sysctl: name=net.core.wmem_max value=16777216 state=present
+
+- name: Set sysctl net.ipv4.tcp_wmem
+  sysctl: name=net.ipv4.tcp_wmem value="4096 12582912 16777216" state=present
+
+- name: Set sysctl net.ipv4.tcp_rmem
+  sysctl: name=net.ipv4.tcp_rmem value="4096 12582912 16777216" state=present
+
+- name: Set sysctl net.ipv4.tcp_slow_start_after_idle
+  sysctl: name=net.ipv4.tcp_slow_start_after_idle value=0 state=present
+
+- name: Set /etc/security/limits.conf
+  template: src=security/limits.conf.j2 dest=/etc/security/limits.conf

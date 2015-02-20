@@ -1,0 +1,101 @@
+---
+# 
+# Cluster node mesos/marathon config
+#
+- name: Configure Docker default
+  template: src=default/docker.j2 dest=/etc/default/docker
+  notify: Restart docker
+
+- name: Ensure docker is started
+  service: name=docker state=started
+
+- name: Install Mesos
+  apt: name=mesos state=latest
+
+- name: Configure Mesos default
+  template: src=default/mesos.j2 dest=/etc/default/mesos
+
+- name: Configure Mesos log level
+  template: src=mesos/logging_level.j2 dest=/etc/mesos/logging_level
+
+- name: Configure Mesos ZooKeeper hosts
+  template: src=mesos/zk.j2 dest=/etc/mesos/zk
+
+- name: Configure Mesos master clustername
+  template: src=mesos-master/cluster.j2 dest=/etc/mesos-master/cluster
+
+- name: Configure Mesos master hostname
+  template: src=mesos-master/hostname.j2 dest=/etc/mesos-master/hostname
+
+- name: Configure Mesos master ip
+  template: src=mesos-master/ip.j2 dest=/etc/mesos-master/ip
+
+- name: Configure Mesos master quorum
+  template: src=mesos-master/quorum.j2 dest=/etc/mesos-master/quorum
+
+- name: Creates Mesos slave attributes directory
+  file: path=/etc/mesos-slave/attributes state=directory
+
+- name: Configure Mesos slave attributes rack
+  template: src=mesos-slave/attributes/rack.j2 dest=/etc/mesos-slave/attributes/rack
+
+- name: Configure Mesos slave hostname
+  template: src=mesos-slave/hostname.j2 dest=/etc/mesos-slave/hostname
+
+- name: Configure Mesos slave ip
+  template: src=mesos-slave/ip.j2 dest=/etc/mesos-slave/ip
+
+- name: Configure Mesos slave isolation
+  template: src=mesos-slave/isolation.j2 dest=/etc/mesos-slave/isolation
+
+- name: Configure Mesos slave containerizers
+  template: src=mesos-slave/containerizers.j2 dest=/etc/mesos-slave/containerizers
+
+- name: Configure Mesos slave executor_registration_timeout
+  template: src=mesos-slave/executor_registration_timeout.j2 dest=/etc/mesos-slave/executor_registration_timeout
+
+- name: Ensure Mesos master started
+  service: name=mesos-master state=started
+
+- name: Wait for Mesos master to be running
+  wait_for: host={{ hostvars[inventory_hostname].ansible_eth0.ipv4.address }} port=5050 delay=1 timeout=30
+
+- name: Ensure Mesos slave started
+  service: name=mesos-slave state=started
+
+- name: Wait for Mesos slave to be running
+  wait_for: host={{ hostvars[inventory_hostname].ansible_eth0.ipv4.address }} port=5051 delay=1 timeout=30
+
+- name: Creates Marathon config directory
+  file: path=/etc/marathon/conf state=directory
+
+- name: Pre-configure Marathon hostname
+  template: src=marathon/conf/hostname.j2 dest=/etc/marathon/conf/hostname
+
+- name: Pre-configure Marathon ZooKeeper hosts
+  template: src=marathon/conf/master.j2 dest=/etc/marathon/conf/master
+
+- name: Pre-configure Marathon ZooKeeper configuration hosts
+  template: src=marathon/conf/zk.j2  dest=/etc/marathon/conf/zk
+
+- name: Pre-configure Marathon task_launch_timeout
+  template: src=marathon/conf/task_launch_timeout.j2 dest=/etc/marathon/conf/task_launch_timeout
+
+- name: Install Marathon
+  apt: name=marathon state=latest
+
+- name: Ensure Marathon started
+  service: name=marathon state=started
+
+- name: Wait for Marathon to be running
+  wait_for: host={{ hostvars[inventory_hostname].ansible_eth0.ipv4.address }} port=8080 delay=1 timeout=30
+
+- name: Creates HAProxy Marathon Bridge config directory
+  file: path=/etc/haproxy-marathon-bridge state=directory
+
+- name: Configure HAProxy Marathon Bridge marathons
+  template: src=haproxy-marathon-bridge/marathons.j2 dest=/etc/haproxy-marathon-bridge/marathons
+
+- name: Copy HAProxy Marathon Bridge script
+  copy: 'src=haproxy-marathon-bridge dest=/etc/haproxy-marathon-bridge/haproxy-marathon-bridge mode="ug+rx"'
+  notify: Reload haproxy-marathon-bridge

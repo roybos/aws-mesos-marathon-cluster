@@ -1,0 +1,9 @@
+---
+# 
+# Cluster node setup
+#
+- include: systemtweaks.yml
+- include: repositories.yml
+- include: packages.yml
+- include: zookeeper.yml
+- include: mesosphere.yml

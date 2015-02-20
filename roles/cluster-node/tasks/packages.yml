@@ -1,0 +1,24 @@
+---
+# 
+# Cluster node packages
+#
+- name: Remove Landscape packages (removes unnecessary delay)
+  apt: name={{ item }} state=absent purge=yes
+  with_items:
+    - landscape-client
+    - landscape-common
+
+- name: Update package lists
+  apt: update_cache=yes
+
+- name: Upgrade default packages
+  apt: upgrade=yes state=latest
+
+- name: Install packages
+  apt: name={{ item }} state=latest
+  with_items:
+    - haproxy
+    - unzip
+    - oracle-java8-installer
+    - oracle-java8-set-default
+    - lxc-docker

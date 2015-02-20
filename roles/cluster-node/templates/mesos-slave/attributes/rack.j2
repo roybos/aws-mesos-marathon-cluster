@@ -1,0 +1,1 @@
+{% for zone in "abc"|list %}{% if hostvars[inventory_hostname]['ansible_ec2_placement_availability_zone']|list|last == zone %}{{loop.index}}{% endif %}{% endfor %}

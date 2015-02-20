@@ -1,0 +1,14 @@
+# http://hadoop.apache.org/zookeeper/docs/current/zookeeperAdmin.html
+
+tickTime=2000
+initLimit=100
+syncLimit=5
+dataDir=/var/lib/zookeeper
+clientPort=2181
+maxClientCnxns=0
+autopurge.purgeInterval=24
+autopurge.snapRetainCount=5
+
+{% for host in play_hosts|sort %}
+server.{{ loop.index }}={{ hostvars[host]['ansible_eth0']['ipv4']['address'] }}:2888:3888
+{% endfor %}

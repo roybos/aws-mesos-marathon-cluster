@@ -1,0 +1,3 @@
+{% for host in play_hosts|sort %}
+{{ hostvars[host]['ansible_eth0']['ipv4']['address'] }}:8080
+{% endfor %}

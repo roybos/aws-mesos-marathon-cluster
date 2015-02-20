@@ -1,0 +1,33 @@
+---
+# 
+# Cluster node handlers
+#
+- name: Restart docker
+  service: name=docker state=restarted
+
+- name: Restart haproxy
+  service: name=haproxy state=restarted
+
+- name: Restart zookeeper
+  service: name=zookeeper state=restarted
+
+- name: Reload zookeeper
+  service: name=zookeeper state=reloaded
+
+- name: Restart mesos-master
+  service: name=mesos-master state=restarted
+
+- name: Restart mesos-slave 
+  service: name=mesos-slave state=restarted
+
+- name: Restart marathon
+  service: name=marathon state=restarted
+
+- name: Reload marathon
+  service: name=marathon state=reloaded
+
+- name: Reload haproxy-marathon-bridge
+  command: /etc/haproxy-marathon-bridge/haproxy-marathon-bridge install_cronjob
+
+- name: Restart cassandra
+  service: name=cassandra state=restarted
