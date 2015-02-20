@@ -7,7 +7,7 @@
     cluster_name: cluster-prod
     cluster_zone_node_count: 1
     cluster_node_disk_size: 10
-    aws_instance_type: m3.large
+    aws_instance_type: m3.xlarge
     aws_keypair: YOUR_NAME
     aws_keypair_publickey: 'YOUR_KEY'
     aws_security_group_rules:
