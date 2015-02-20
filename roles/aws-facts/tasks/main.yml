@@ -1,0 +1,6 @@
+---
+#
+# AWS facts: gather facts about instances
+#
+- name: Gather EC2 facts
+  action: ec2_facts
