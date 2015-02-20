@@ -1,0 +1,18 @@
+---
+#
+#  PRODUCTION: Setup Mesos/Marathon Cluster in AWS
+#
+- include: aws.yml
+  vars:
+    cluster_name: cluster-prod
+    cluster_zone_node_count: 1
+    cluster_node_disk_size: 10
+    aws_instance_type: m3.large
+    aws_keypair: YOUR_NAME
+    aws_keypair_publickey: 'YOUR_KEY'
+    aws_security_group_rules:
+      - { proto: all, group_name: "{{ cluster_name }}" }
+      - { proto: tcp, from_port: 80, to_port: 80, cidr_ip: 0.0.0.0/0 }
+      - { proto: tcp, from_port: 443, to_port: 443, cidr_ip: 0.0.0.0/0 }
+      - { proto: tcp, from_port: 5050, to_port: 5050, cidr_ip: 0.0.0.0/0 }
+      - { proto: tcp, from_port: 8080, to_port: 8080, cidr_ip: 0.0.0.0/0 }
